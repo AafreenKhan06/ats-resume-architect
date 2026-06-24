@@ -268,6 +268,7 @@ export default function App() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [rawJsonInput, setRawJsonInput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [aiFeedback, setAiFeedback] = useState(null);
   const [showScoreDiagnostics, setShowScoreDiagnostics] = useState(false);
   
@@ -375,6 +376,148 @@ export default function App() {
     }
     setAiLoading(false);
     throw new Error("Server communication timed out. Please try again.");
+  };
+
+  // Safe browser sandbox-based PDF.js loader
+  const loadPdfJS = () => {
+    return new Promise((resolve, reject) => {
+      if (window.pdfjsLib) {
+        resolve(window.pdfjsLib);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
+      script.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      script.onerror = () => {
+        reject(new Error("Failed to load PDF processing library script. Check internet connectivity."));
+      };
+      document.head.appendChild(script);
+    });
+  };
+
+  // Parse file to text
+  const extractTextFromPdf = async (file) => {
+    const pdfjsLib = await loadPdfJS();
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(" ");
+      fullText += pageText + "\n";
+    }
+    return fullText;
+  };
+
+  // PDF upload text parser with structured mapping AI integration
+  const handleParseResumePdf = async (file) => {
+    if (!geminiApiKey.trim()) {
+      showToast("Missing Gemini API Key! Configure it in 'ATS Assistant' -> 'Personal Gemini API Key' first.", "error");
+      setActiveTab("ai-audit");
+      return;
+    }
+
+    try {
+      setPdfLoading(true);
+      showToast("Extracting raw text from PDF file...", "info");
+      const rawText = await extractTextFromPdf(file);
+      
+      if (!rawText.trim()) {
+        throw new Error("Extracted text was completely empty. Please verify this is a structured digital PDF file (not a raster scan).");
+      }
+
+      showToast("Generating parsed resume structure via Gemini AI...", "info");
+      
+      const systemPrompt = "You are an expert resume parsing engine. Your job is to extract unstructured text strings and format them strictly into a clean valid JSON structural schema.";
+      const prompt = `Deconstruct and map the unstructured raw resume text content below into a valid, complete JSON document mapping this template schema EXACTLY:
+      
+      {
+        "personal": {
+          "fullName": "Full Name",
+          "title": "Aspirated Professional Title",
+          "email": "Email",
+          "phone": "Phone Number",
+          "location": "City, State",
+          "website": "Personal portfolio link",
+          "linkedin": "LinkedIn profile link"
+        },
+        "summary": "Professional Summary Statement (3-4 sentences)",
+        "experience": [
+          {
+            "id": "exp-unique_id",
+            "company": "Company Name",
+            "position": "Job Title",
+            "location": "Location",
+            "startDate": "YYYY-MM",
+            "endDate": "YYYY-MM or Present",
+            "current": true/false,
+            "description": "Quantifiable metrics achievement bullets separated by normal newlines"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu-unique_id",
+            "institution": "University / School name",
+            "degree": "Degree and Focus Area",
+            "location": "Location",
+            "startDate": "Year",
+            "endDate": "Year",
+            "gpa": "GPA"
+          }
+        ],
+        "projects": [
+          {
+            "id": "proj-unique_id",
+            "name": "Project name",
+            "role": "Role / Creator",
+            "link": "Project live demo URL",
+            "description": "Details & tools used"
+          }
+        ],
+        "skills": [
+          { "category": "Category Class (e.g. Languages)", "items": "Skill1, Skill2, Skill3" }
+        ],
+        "certifications": [
+          { "id": "cert-unique_id", "name": "Certification name", "issuer": "Issuer Organization", "year": "Year earned" }
+        ]
+      }
+
+      Formatting strictures:
+      1. Return ONLY the raw output JSON block. No markdown markers, no extra text, no "json" label tags.
+      2. Ensure unique sequential strings for list IDs (e.g. exp-1, edu-1, proj-1, cert-1).
+      3. For any sections that are completely non-existent inside the source, return an empty array [] instead of crashing.
+
+      Resume Raw Text Content:
+      ${rawText}`;
+
+      const output = await callGeminiAi(prompt, systemPrompt);
+      if (output) {
+        const cleanJson = output.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsedData = JSON.parse(cleanJson);
+        
+        // Merge missing sections dynamically to preserve local react integrity
+        const integratedData = {
+          personal: parsedData.personal || INITIAL_RESUME_DATA.personal,
+          summary: parsedData.summary || "",
+          experience: parsedData.experience || [],
+          education: parsedData.education || [],
+          projects: parsedData.projects || [],
+          skills: parsedData.skills || [],
+          certifications: parsedData.certifications || []
+        };
+
+        setResumeData(integratedData);
+        showToast("Successfully parsed and updated your resume configurations!", "success");
+      }
+    } catch (err) {
+      showToast("PDF parsing failed: " + err.message, "error");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   // Save the custom API key to local storage
@@ -812,8 +955,44 @@ export default function App() {
             {activeTab === "personal" && (
               <div className="space-y-4">
                 <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">Contact Details & Persona</h2>
-                  <p className="text-xs text-slate-400">Essential details for hiring managers and automatic scanning filters to match key metrics.</p>
+                  <h2 className="text-base font-bold text-slate-100 flex items-center gap-2 font-black">Contact Details & Parser</h2>
+                  <p className="text-xs text-slate-400 font-medium">Auto-populate by uploading your old resume or update your contact credentials below manually.</p>
+                </div>
+
+                {/* AI RESUME PDF PARSER FILE ZONE */}
+                <div className="bg-gradient-to-r from-teal-500/10 to-blue-500/10 border border-teal-500/20 rounded-xl p-4 space-y-3 mb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-teal-400 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4" /> Quick Import: Upload Old Resume PDF
+                    </span>
+                    <span className="text-[10px] bg-teal-500/20 text-teal-300 font-bold px-2 py-0.5 rounded border border-teal-500/30">
+                      AI Powered
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                    Have an old resume? Upload your PDF here. We will instantly extract its data and use Gemini AI to automatically organize and structure all your sections. 
+                    <span className="text-amber-400 block mt-1">⚠️ Requires your Gemini API Key configured in the 'ATS Assistant' tab first.</span>
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <label className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-teal-500 text-xs font-bold text-slate-200 py-3 px-4 rounded-lg cursor-pointer transition-all duration-200">
+                      {pdfLoading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-teal-400" />
+                      ) : (
+                        <Upload className="w-4 h-4 text-teal-400" />
+                      )}
+                      <span>{pdfLoading ? "Processing sandboxed data..." : "Choose Resume PDF File"}</span>
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) handleParseResumePdf(file);
+                        }}
+                        className="hidden" 
+                        disabled={pdfLoading}
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
