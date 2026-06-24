@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, Briefcase, GraduationCap, Code, Award, 
   Settings, Eye, FileText, Download, Upload, 
   Sparkles, CheckCircle2, AlertCircle, RefreshCw, 
   Trash2, Plus, ArrowUp, ArrowDown, Info, HelpCircle,
-  Activity, Gauge, ListChecks, Sliders, ChevronDown, ChevronUp
+  Activity, Gauge, ListChecks, Key
 } from 'lucide-react';
 
 const INITIAL_RESUME_DATA = {
@@ -76,7 +76,7 @@ const THEMES = [
   {
     id: "executive",
     name: "Executive Classic",
-    description: "Highly polished traditional layout. Great for business, leadership, finance, and traditional industries.",
+    description: "Highly polished, traditional layout. Ideal for finance, management, consulting, and traditional industries.",
     font: "Georgia",
     layout: "single",
     headerAlignment: "center",
@@ -85,7 +85,7 @@ const THEMES = [
   {
     id: "tech-pro",
     name: "Tech Professional",
-    description: "Modern layout. Optimized with sharp dividers and headers loved by technical screeners.",
+    description: "Modern & high-tech. Perfectly formatted with crisp styling and clear headings that top-tier technical ATS love.",
     font: "Helvetica",
     layout: "single",
     headerAlignment: "left",
@@ -94,7 +94,7 @@ const THEMES = [
   {
     id: "modern-minimalist",
     name: "Modern Minimalist",
-    description: "Ultra-clean aesthetics with crisp visual hierarchy, high density and clean space economy.",
+    description: "Ultra-clean visual rhythm. Compact, high-density layouts perfect for maximizing page economy without losing elegance.",
     font: "Arial",
     layout: "single",
     headerAlignment: "left",
@@ -103,7 +103,7 @@ const THEMES = [
   {
     id: "two-column-ats",
     name: "Symmetric Split",
-    description: "Perfectly designed double column layout. Sequentially flowable for seamless parser compatibility.",
+    description: "A balanced two-column format structure. Specifically engineered with sequential block flowing for parsed compatibility.",
     font: "Calibri",
     layout: "double",
     headerAlignment: "left",
@@ -112,16 +112,16 @@ const THEMES = [
   {
     id: "compact-corporate",
     name: "Compact Corporate",
-    description: "High-density design highlighted in Royal Blue. Engineered to fit extensive details into a single page.",
+    description: "An elegant, tight-margin design layout with deep royal blue highlights. Engineered to squeeze maximum content onto one page.",
     font: "Helvetica",
     layout: "single",
     headerAlignment: "left",
-    colors: { primary: "#0f172a", secondary: "#2563eb", text: "#1e293b" }
+    colors: { primary: "#0f172a", secondary: "#3b82f6", text: "#1e293b" }
   },
   {
     id: "editorial-serif",
     name: "Editorial Elegance",
-    description: "Distinguished charcoal-toned serif design. Ideal for expert advisory, academic, or law sectors.",
+    description: "Subtle serif styling with charcoal tones. Perfect for academic research, legal profiles, and senior expert positions.",
     font: "Georgia",
     layout: "single",
     headerAlignment: "center",
@@ -130,7 +130,7 @@ const THEMES = [
   {
     id: "creative-hybrid",
     name: "Creative Hybrid",
-    description: "Stylish deep burgundy split borders. Adds visual flair while remaining 100% compliant.",
+    description: "Features custom deep-wine borders and stylish side-by-side descriptors. Fully ATS parsable.",
     font: "Arial",
     layout: "double",
     headerAlignment: "left",
@@ -139,50 +139,50 @@ const THEMES = [
 ];
 
 const calculateLocalAtsScore = (data, theme) => {
-  let score = 30; // Starting baseline
+  let score = 30; // Base score starting point
   const diagnostics = [];
 
-  // Personal Info Integrity
-  if (data.personal.fullName) { score += 4; diagnostics.push({ type: 'pass', text: 'Full Name configured.' }); }
-  else { diagnostics.push({ type: 'fail', text: 'Missing Full Name.' }); }
+  // 1. Identity Integrity Metrics (Max 20 pts)
+  if (data.personal.fullName) { score += 4; diagnostics.push({ type: 'pass', text: 'Full name is defined.' }); }
+  else { diagnostics.push({ type: 'fail', text: 'Full name missing in header.' }); }
 
-  if (data.personal.email) { score += 4; diagnostics.push({ type: 'pass', text: 'Email contact configured.' }); }
-  else { diagnostics.push({ type: 'fail', text: 'Missing email contact details.' }); }
+  if (data.personal.email) { score += 4; diagnostics.push({ type: 'pass', text: 'Primary email address configured.' }); }
+  else { diagnostics.push({ type: 'fail', text: 'Missing email address for recruiter responses.' }); }
 
-  if (data.personal.phone) { score += 4; diagnostics.push({ type: 'pass', text: 'Phone number configured.' }); }
-  else { diagnostics.push({ type: 'fail', text: 'Missing phone number.' }); }
+  if (data.personal.phone) { score += 4; diagnostics.push({ type: 'pass', text: 'Contact phone number provided.' }); }
+  else { diagnostics.push({ type: 'fail', text: 'Missing phone contact.' }); }
 
-  if (data.personal.location) { score += 4; diagnostics.push({ type: 'pass', text: 'City/State location configured.' }); }
-  else { diagnostics.push({ type: 'warn', text: 'No location. Recruiters search by local pools.' }); }
+  if (data.personal.location) { score += 4; diagnostics.push({ type: 'pass', text: 'Geographic location included.' }); }
+  else { diagnostics.push({ type: 'warn', text: 'No city/state location (helps matching local pipeline filters).' }); }
 
-  if (data.personal.linkedin) { score += 4; diagnostics.push({ type: 'pass', text: 'LinkedIn profile listed.' }); }
-  else { diagnostics.push({ type: 'warn', text: 'Adding LinkedIn profile yields better engagement.' }); }
+  if (data.personal.linkedin) { score += 4; diagnostics.push({ type: 'pass', text: 'LinkedIn portfolio included.' }); }
+  else { diagnostics.push({ type: 'warn', text: 'Add a LinkedIn profile to increase screening metrics.' }); }
 
-  // Summary Metrics
+  // 2. Professional Profile Metrics (Max 15 pts)
   if (data.summary) {
-    const wordCount = data.summary.trim().split(/\s+/).length;
-    if (wordCount >= 35 && wordCount <= 90) {
+    const words = data.summary.trim().split(/\s+/).length;
+    if (words >= 35 && words <= 90) {
       score += 15;
-      diagnostics.push({ type: 'pass', text: `Excellent summary length (${wordCount} words).` });
-    } else if (wordCount > 90) {
+      diagnostics.push({ type: 'pass', text: `Optimal Summary length (${words} words).` });
+    } else if (words > 90) {
       score += 8;
-      diagnostics.push({ type: 'warn', text: `Profile summary is overly wordy (${wordCount} words). Trim under 90.` });
+      diagnostics.push({ type: 'warn', text: `Summary is too dense (${words} words). Try keeping it below 90 words for visual scanning.` });
     } else {
       score += 5;
-      diagnostics.push({ type: 'warn', text: 'Summary profile is too short. Include more keywords.' });
+      diagnostics.push({ type: 'warn', text: 'Summary is extremely short. Add more tech stack keywords.' });
     }
   } else {
-    diagnostics.push({ type: 'fail', text: 'No professional profile summary.' });
+    diagnostics.push({ type: 'fail', text: 'Missing Professional Summary section completely.' });
   }
 
-  // Work Experience Metrics
+  // 3. Experience Metrics & Bullet Checks (Max 25 pts)
   if (data.experience && data.experience.length > 0) {
     score += 10;
-    let totalBullets = 0;
-    let metricHits = 0;
-    let actionVerbHits = 0;
+    let bulletCount = 0;
+    let metricCount = 0;
+    let verbCount = 0;
 
-    const strongVerbs = [
+    const actionVerbs = [
       'led', 'designed', 'developed', 'optimized', 'managed', 'built', 'created',
       'solved', 'achieved', 'increased', 'decreased', 'spearheaded', 'automated',
       'implemented', 'established', 'engineered', 'formulated', 'delivered'
@@ -191,60 +191,61 @@ const calculateLocalAtsScore = (data, theme) => {
     data.experience.forEach(e => {
       if (e.description) {
         const bullets = e.description.split('\n').filter(b => b.trim().length > 0);
-        totalBullets += bullets.length;
+        bulletCount += bullets.length;
 
         bullets.forEach(bullet => {
-          if (/[\d%+$]|million|billion|thousand/i.test(bullet)) {
-            metricHits++;
+          if (/[\d%+$]|million|billion/i.test(bullet)) {
+            metricCount++;
           }
           const words = bullet.toLowerCase().split(/\s+/);
-          if (words.some(w => strongVerbs.includes(w.replace(/[^a-z]/g, '')))) {
-            actionVerbHits++;
+          if (words.some(w => actionVerbs.includes(w.replace(/[^a-z]/g, '')))) {
+            verbCount++;
           }
         });
       }
     });
 
-    if (totalBullets >= 4) {
+    if (bulletCount >= 4) {
       score += 5;
-      diagnostics.push({ type: 'pass', text: `Comprehensive work bullets provided (${totalBullets} points).` });
+      diagnostics.push({ type: 'pass', text: `Strong performance tracking (${bulletCount} achievement points detailed).` });
     } else {
-      score += 2;
-      diagnostics.push({ type: 'warn', text: `Short on work bullet items (${totalBullets} points). Expand.` });
+      score += 4;
+      diagnostics.push({ type: 'warn', text: `Very few job details (${bulletCount} bullets). Add more metrics-based achievements.` });
     }
 
-    if (metricHits >= 2) {
+    if (metricCount >= 2) {
       score += 5;
-      diagnostics.push({ type: 'pass', text: `Contains quantitative metrics (${metricHits} metrics found).` });
+      diagnostics.push({ type: 'pass', text: `Impact quantification: Found ${metricCount} metrics-based achievements (%, $, numbers).` });
     } else {
-      diagnostics.push({ type: 'warn', text: 'Add quantitative metrics (e.g., optimized speeds by 30%, $50k sales).' });
+      diagnostics.push({ type: 'warn', text: `Missing quantitative metrics (e.g., %, $, +40%). Recruiter bots love proof of impact.` });
     }
 
-    if (actionVerbHits >= 3) {
+    if (verbCount >= 3) {
       score += 5;
-      diagnostics.push({ type: 'pass', text: `Excellent action verb usage (${actionVerbHits} action verbs).` });
+      diagnostics.push({ type: 'pass', text: `Excellent action-oriented wording. Found ${verbCount} strong action verbs.` });
     } else {
-      diagnostics.push({ type: 'warn', text: 'Increase action-oriented keywords inside bullets.' });
+      diagnostics.push({ type: 'warn', text: 'Wording could be stronger. Use action verbs (Led, Designed, Optimized).' });
     }
+
   } else {
-    diagnostics.push({ type: 'fail', text: 'Missing work experience segment completely.' });
+    diagnostics.push({ type: 'fail', text: 'No Work Experience added. ATS software rejects blank careers.' });
   }
 
-  // Skills Categories
+  // 4. Competency Categorization (Max 15 pts)
   if (data.skills && data.skills.length > 0) {
     score += 15;
-    diagnostics.push({ type: 'pass', text: `${data.skills.length} skills taxonomies loaded.` });
+    diagnostics.push({ type: 'pass', text: `${data.skills.length} skills taxonomy classes configured.` });
   } else {
-    diagnostics.push({ type: 'fail', text: 'Skills block is completely blank.' });
+    diagnostics.push({ type: 'fail', text: 'Missing technical skill lists. Add a competencies grid immediately.' });
   }
 
-  // Layout check
+  // 5. Layout Integrity (Max 15 pts)
   if (theme.layout === 'double') {
     score += 5;
-    diagnostics.push({ type: 'warn', text: 'Two-column layout active. Classic systems score single column higher.' });
+    diagnostics.push({ type: 'warn', text: 'Dual column format active. Some legacy systems favor single column layouts.' });
   } else {
     score += 15;
-    diagnostics.push({ type: 'pass', text: 'Highly compatible single column format selected.' });
+    diagnostics.push({ type: 'pass', text: 'Highly compatible single column layout configuration.' });
   }
 
   return {
@@ -255,22 +256,17 @@ const calculateLocalAtsScore = (data, theme) => {
 
 export default function App() {
   const [resumeData, setResumeData] = useState(() => {
-    const saved = localStorage.getItem('ats_resume_builder_v3_state');
+    const saved = localStorage.getItem('ats_resume_builder_data_v2');
     return saved ? JSON.parse(saved) : INITIAL_RESUME_DATA;
   });
 
   const [activeTheme, setActiveTheme] = useState(THEMES[1]); // Tech Pro default
   const [fontSize, setFontSize] = useState("sm"); // xs, sm, base, lg
   const [lineSpacing, setLineSpacing] = useState("normal"); // tight, normal, relaxed
-  const [pageMargin, setPageMargin] = useState("normal"); // narrow, normal, generous
   const [activeTab, setActiveTab] = useState("personal");
   const [notification, setNotification] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [rawJsonInput, setRawJsonInput] = useState("");
-  
-  const [pdfParsing, setPdfParsing] = useState(false);
-  const [pdfError, setPdfError] = useState("");
-  
   const [aiLoading, setAiLoading] = useState(false);
   const [aiFeedback, setAiFeedback] = useState(null);
   const [showScoreDiagnostics, setShowScoreDiagnostics] = useState(false);
@@ -281,126 +277,59 @@ export default function App() {
   const [interviewPrep, setInterviewPrep] = useState(null);
   const [activeAiSubTab, setActiveAiSubTab] = useState("audit"); // audit, tailor, tone, prep
 
-  const fileInputRef = useRef(null);
+  // Client-managed Gemini API key
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    return localStorage.getItem('gemini_user_api_key') || "";
+  });
 
-  // Auto caching save
+  // Save progress locally
   useEffect(() => {
-    localStorage.setItem('ats_resume_v3_state', JSON.stringify(resumeData));
+    localStorage.setItem('ats_resume_builder_data_v2', JSON.stringify(resumeData));
   }, [resumeData]);
 
+  // Show Toast helper
   const showToast = (message, type = 'info') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const handlePdfUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setPdfParsing(true);
-    setPdfError("");
-    showToast("Initializing client-side secure PDF reader...", "info");
-
+  // Import data handler
+  const handleImportJson = () => {
     try {
-      // Dynamically load PDFJS from secure cdn
-      if (!window.pdfjsLib) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-        document.head.appendChild(script);
-        await new Promise((resolve) => {
-          script.onload = resolve;
-        });
+      const parsed = JSON.parse(rawJsonInput);
+      if (!parsed.personal || !parsed.skills || !parsed.experience) {
+        throw new Error("Invalid format. Missing required resume structural components.");
       }
-
-      const pdfjsLib = window.pdfjsLib;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-      const fileReader = new FileReader();
-      fileReader.onload = async (e) => {
-        try {
-          const typedArray = new Uint8Array(e.target.result);
-          const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-          let extractedText = "";
-
-          for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const content = await page.getTextContent();
-            const pageText = content.items.map(item => item.str).join(" ");
-            extractedText += pageText + "\n";
-          }
-
-          if (!extractedText.trim()) {
-            throw new Error("Unable to read selectable text from this PDF file. It might be scanned or image-based.");
-          }
-
-          showToast("Extracted raw text! Sending to Gemini AI parser...", "success");
-          await parseExtractedTextWithGemini(extractedText);
-        } catch (innerErr) {
-          setPdfError(innerErr.message);
-          setPdfParsing(false);
-          showToast("PDF parsing failure", "error");
-        }
-      };
-
-      fileReader.readAsArrayBuffer(file);
-    } catch (err) {
-      setPdfError(err.message);
-      setPdfParsing(false);
-      showToast("Library initialization error", "error");
+      setResumeData(parsed);
+      setShowImportModal(false);
+      showToast("Resume data imported successfully!", "success");
+    } catch (e) {
+      showToast(e.message || "Invalid JSON formatted string", "error");
     }
   };
 
-  const parseExtractedTextWithGemini = async (rawText) => {
-    const systemPrompt = "You are a professional resume parser. Your job is to extract unstructured text from a resume PDF and convert it into a strictly structured JSON object.";
-    const userPrompt = `Parse this extracted resume text and convert it to match this exact schema format:
-    {
-      "personal": { "fullName": "", "title": "", "email": "", "phone": "", "location": "", "website": "", "linkedin": "" },
-      "summary": "",
-      "experience": [ { "id": "exp-1", "company": "", "position": "", "location": "", "startDate": "", "endDate": "", "current": false, "description": "Bullet 1\\nBullet 2" } ],
-      "education": [ { "id": "edu-1", "institution": "", "degree": "", "location": "", "startDate": "", "endDate": "", "gpa": "" } ],
-      "projects": [ { "id": "proj-1", "name": "", "role": "", "link": "", "description": "" } ],
-      "skills": [ { "category": "Languages", "items": "JavaScript, Python, ..." } ],
-      "certifications": [ { "id": "cert-1", "name": "", "issuer": "", "year": "" } ]
-    }
-    
-    Only respond with the valid JSON object. Do not include markdown wraps or dialogue. Here is the resume text:
-    ${rawText}`;
-
-    try {
-      const outputText = await callGeminiAi(userPrompt, systemPrompt);
-      if (outputText) {
-        const cleanJson = outputText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsedState = JSON.parse(cleanJson);
-        
-        // Ensure IDs exist
-        if (parsedState.experience) {
-          parsedState.experience = parsedState.experience.map((e, idx) => ({ ...e, id: e.id || `exp-${idx}` }));
-        }
-        if (parsedState.education) {
-          parsedState.education = parsedState.education.map((e, idx) => ({ ...e, id: e.id || `edu-${idx}` }));
-        }
-        if (parsedState.projects) {
-          parsedState.projects = parsedState.projects.map((p, idx) => ({ ...p, id: p.id || `proj-${idx}` }));
-        }
-        if (parsedState.certifications) {
-          parsedState.certifications = parsedState.certifications.map((c, idx) => ({ ...c, id: c.id || `cert-${idx}` }));
-        }
-
-        setResumeData(parsedState);
-        setPdfParsing(false);
-        showToast("Resume parsed and loaded successfully!", "success");
-      }
-    } catch (err) {
-      setPdfError("Failed to structure raw text: " + err.message);
-      setPdfParsing(false);
-      showToast("Structuring parsed data failed", "error");
-    }
+  // Download raw JSON backup
+  const handleExportJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${resumeData.personal.fullName.replace(/\s+/g, '_')}_resume_data.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("JSON config exported!", "success");
   };
 
+  // Deep Gemini 3 Flash API Integrations
   const callGeminiAi = async (promptText, systemPrompt = "") => {
+    if (!geminiApiKey.trim()) {
+      showToast("Missing Gemini API Key! Please enter your key in the 'ATS Assistant' tab.", "error");
+      setActiveTab("ai-audit");
+      return null;
+    }
+
     setAiLoading(true);
-    const apiKey = ""; 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
 
     const payload = {
       contents: [{ parts: [{ text: promptText }] }]
@@ -427,6 +356,11 @@ export default function App() {
           return result.candidates?.[0]?.content?.parts?.[0]?.text;
         }
 
+        if (response.status === 403) {
+          setAiLoading(false);
+          throw new Error("Access Forbidden (403). Your Gemini API key is invalid, restricted, or expired.");
+        }
+
         if (response.status !== 429 && response.status >= 400 && response.status < 500) {
           throw new Error(`API Error Status Code: ${response.status}`);
         }
@@ -441,6 +375,14 @@ export default function App() {
     }
     setAiLoading(false);
     throw new Error("Server communication timed out. Please try again.");
+  };
+
+  // Save the custom API key to local storage
+  const handleSaveApiKey = (key) => {
+    const trimmedKey = key.trim();
+    localStorage.setItem('gemini_user_api_key', trimmedKey);
+    setGeminiApiKey(trimmedKey);
+    showToast("Gemini API key saved securely!", "success");
   };
 
   const handleTailorResume = async () => {
@@ -603,38 +545,15 @@ export default function App() {
 
     try {
       const resultText = await callGeminiAi(prompt);
-      const cleanJsonStr = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const report = JSON.parse(cleanJsonStr);
-      setAiFeedback(report);
-      showToast("ATS Scan complete!", "success");
-    } catch (err) {
-      showToast("Audit parsing failed. Try scanning again.", "error");
-    }
-  };
-
-  const handleImportJson = () => {
-    try {
-      const parsed = JSON.parse(rawJsonInput);
-      if (!parsed.personal || !parsed.skills || !parsed.experience) {
-        throw new Error("Invalid format. Missing required resume structural components.");
+      if (resultText) {
+        const cleanJsonStr = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const report = JSON.parse(cleanJsonStr);
+        setAiFeedback(report);
+        showToast("ATS Scan complete!", "success");
       }
-      setResumeData(parsed);
-      setShowImportModal(false);
-      showToast("Resume data imported successfully!", "success");
-    } catch (e) {
-      showToast(e.message || "Invalid JSON formatted string", "error");
+    } catch (err) {
+      showToast("Audit parsing failed: " + err.message, "error");
     }
-  };
-
-  const handleExportJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `${resumeData.personal.fullName.replace(/\s+/g, '_')}_resume_data.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showToast("JSON config exported!", "success");
   };
 
   const handlePrint = () => {
@@ -690,34 +609,6 @@ export default function App() {
     }
   };
 
-  const getFontSizeClass = () => {
-    switch (fontSize) {
-      case 'xs': return 'text-[11px]';
-      case 'sm': return 'text-[12px]';
-      case 'base': return 'text-[14px]';
-      case 'lg': return 'text-[16px]';
-      default: return 'text-[12px]';
-    }
-  };
-
-  const getLineSpacingClass = () => {
-    switch (lineSpacing) {
-      case 'tight': return 'leading-[1.15]';
-      case 'normal': return 'leading-[1.5]';
-      case 'relaxed': return 'leading-[1.8]';
-      default: return 'leading-[1.5]';
-    }
-  };
-
-  const getMarginClass = () => {
-    switch (pageMargin) {
-      case 'narrow': return 'p-6 md:p-8';
-      case 'normal': return 'p-8 md:p-12';
-      case 'generous': return 'p-10 md:p-16';
-      default: return 'p-8 md:p-12';
-    }
-  };
-
   const localAtsEvaluation = calculateLocalAtsScore(resumeData, activeTheme);
 
   return (
@@ -733,15 +624,16 @@ export default function App() {
             <h1 className="text-xl font-bold tracking-wide flex items-center gap-2">
               ATS-Optimized Resume Architect
               <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30">
-                Unprecedented Parsability
+                100% Parsable
               </span>
             </h1>
-            <p className="text-xs text-slate-400">Transform raw resumes with direct PDF-parsers & layout density adjusters</p>
+            <p className="text-xs text-slate-400">Craft executive-grade resumes designed to beat automated parsing screeners</p>
           </div>
         </div>
 
         {/* ATS Realtime Score Section inside Header */}
         <div className="flex items-center gap-3">
+          
           <div 
             onClick={() => setActiveTab("ai-audit")} 
             className="cursor-pointer bg-slate-900 border border-slate-800 rounded-xl px-4 py-1.5 flex items-center gap-3 hover:border-teal-500 transition-all group"
@@ -791,7 +683,7 @@ export default function App() {
 
       {/* Floating Notifications */}
       {notification && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl bg-slate-850 text-slate-100 border border-slate-700">
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl bg-slate-800 text-slate-100 border border-slate-755">
           {notification.type === 'success' ? (
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           ) : notification.type === 'error' ? (
@@ -808,7 +700,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-850 border border-slate-700 rounded-xl max-w-lg w-full p-6 shadow-2xl">
             <h3 className="text-lg font-bold mb-2">Import Resume Profile config</h3>
-            <p className="text-xs text-slate-400 mb-4">Paste JSON configuration data to restore your workspace.</p>
+            <p className="text-xs text-slate-400 mb-4">Paste the JSON configuration data previously downloaded from this app to instantly restore your session.</p>
             <textarea 
               className="w-full h-48 bg-slate-950 border border-slate-700 rounded-lg p-3 text-mono text-xs text-teal-300 focus:ring-2 focus:ring-teal-500 focus:outline-none mb-4"
               placeholder='Paste JSON structural data here...'
@@ -885,7 +777,6 @@ export default function App() {
           {/* Editor Tabs Navigation */}
           <nav className="flex items-center overflow-x-auto border-b border-slate-800 bg-slate-950 shrink-0 scrollbar-thin mt-4">
             {[
-              { id: "pdf-parser", label: "Upload Old Resume", icon: Upload },
               { id: "personal", label: "Identity", icon: User },
               { id: "experience", label: "Experience", icon: Briefcase },
               { id: "education", label: "Education", icon: GraduationCap },
@@ -916,55 +807,6 @@ export default function App() {
 
           {/* Tab Content Panel */}
           <div className="p-6 flex-1 space-y-6">
-
-            {/* TAB: PDF Resume Parser */}
-            {activeTab === "pdf-parser" && (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-teal-400" />
-                    PDF-to-Resume Parser
-                  </h2>
-                  <p className="text-xs text-slate-400">Upload your old PDF resume. We will extract the selectable text inside the sandbox and pass it to Gemini to instantly structure your new profile.</p>
-                </div>
-
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-700 hover:border-teal-500 bg-slate-900/40 p-8 rounded-2xl text-center cursor-pointer transition-all group"
-                >
-                  <input 
-                    type="file" 
-                    ref={fileInputRef}
-                    accept="application/pdf"
-                    className="hidden" 
-                    onChange={handlePdfUpload}
-                  />
-                  
-                  {pdfParsing ? (
-                    <div className="space-y-3">
-                      <RefreshCw className="w-10 h-10 text-teal-400 animate-spin mx-auto" />
-                      <p className="text-sm font-semibold text-slate-300">Extracting and parsing text lines...</p>
-                      <p className="text-[11px] text-slate-500">This connects securely to standard Gemini LLM configurations.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <FileText className="w-10 h-10 text-slate-400 group-hover:text-teal-400 transition mx-auto" />
-                      <div>
-                        <p className="text-sm font-semibold text-slate-200">Click to upload your old PDF resume</p>
-                        <p className="text-xs text-slate-400 mt-1">Supports standard selectable PDF formats</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {pdfError && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex gap-2 items-start">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{pdfError}</span>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* TAB: Personal Details */}
             {activeTab === "personal" && (
@@ -1447,12 +1289,12 @@ export default function App() {
             {activeTab === "settings" && (
               <div className="space-y-6">
                 <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">Formatting & Sizing Themes</h2>
-                  <p className="text-xs text-slate-400">Customize standard fonts, line spacings, and document margin scale.</p>
+                  <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">Formatting Themes</h2>
+                  <p className="text-xs text-slate-400">Customize standard fonts and spacings.</p>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-xs font-semibold text-slate-300">Choose Aesthetic Template Theme</label>
+                  <label className="block text-xs font-semibold text-slate-300">Choose Aesthetic Layout</label>
                   <div className="grid grid-cols-1 gap-3">
                     {THEMES.map((theme) => (
                       <button
@@ -1474,8 +1316,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Sizing Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">Standard ATS Font</label>
                     <select 
@@ -1490,62 +1331,17 @@ export default function App() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Base Font Sizing</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Base Font Size</label>
                     <select 
                       value={fontSize}
                       onChange={(e) => setFontSize(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
                     >
-                      <option value="xs">Tiny / XS (11px)</option>
-                      <option value="sm">Small (12px - Recommended)</option>
-                      <option value="base">Normal (14px)</option>
-                      <option value="lg">Large (16px)</option>
+                      <option value="xs">Tiny / XS</option>
+                      <option value="sm">Small (Highly Recommended)</option>
+                      <option value="base">Normal (Base)</option>
+                      <option value="lg">Large</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Line Height Spacing</label>
-                    <select 
-                      value={lineSpacing}
-                      onChange={(e) => setLineSpacing(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
-                    >
-                      <option value="tight">Tight (1.15)</option>
-                      <option value="normal">Standard (1.5)</option>
-                      <option value="relaxed">Relaxed (1.8)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">Page Margin Scale</label>
-                    <select 
-                      value={pageMargin}
-                      onChange={(e) => setPageMargin(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200"
-                    >
-                      <option value="narrow">Narrow (Maximise content room)</option>
-                      <option value="normal">Standard (Standard balance)</option>
-                      <option value="generous">Generous (Elegant frame)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800">
-                  <label className="block text-xs font-semibold text-slate-300 mb-2">Theme Accent Color</label>
-                  <div className="flex gap-2">
-                    {[
-                      { name: "Teal Green", value: "#0f766e" },
-                      { name: "Executive Slate", value: "#1e293b" },
-                      { name: "Corporate Blue", value: "#2563eb" },
-                      { name: "Classic Gold", value: "#b45309" },
-                      { name: "Crimson Red", value: "#be123c" }
-                    ].map(col => (
-                      <button 
-                        key={col.value}
-                        onClick={() => setActiveTheme({ ...activeTheme, colors: { ...activeTheme.colors, primary: col.value } })}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${activeTheme.colors.primary === col.value ? 'border-teal-400 scale-110' : 'border-transparent'}`}
-                        style={{ backgroundColor: col.value }}
-                        title={col.name}
-                      />
-                    ))}
                   </div>
                 </div>
               </div>
@@ -1560,6 +1356,31 @@ export default function App() {
                     Gemini AI Workspace & Audits
                   </h2>
                   <p className="text-xs text-slate-400 font-medium">Use elite Gemini 3 Flash models to score, morph tones, tailor to JDs, and prep for interviews.</p>
+                </div>
+
+                {/* Secure API Key Config Block */}
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-2.5">
+                  <span className="text-xs font-bold text-teal-400 flex items-center gap-1.5">
+                    <Key className="w-4 h-4" /> Personal Gemini API Key Config
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    A key is required to make secure AI calls from your Vercel URL. Get one free at <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-teal-400 underline hover:text-teal-300">Google AI Studio</a>. It is saved strictly on your local browser.
+                  </p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="password"
+                      placeholder="AIzaSy..."
+                      value={geminiApiKey}
+                      onChange={(e) => setGeminiApiKey(e.target.value)}
+                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                    />
+                    <button 
+                      onClick={() => handleSaveApiKey(geminiApiKey)}
+                      className="bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                    >
+                      Save Key
+                    </button>
+                  </div>
                 </div>
 
                 {/* Sub-tab Navigation */}
@@ -1840,8 +1661,9 @@ export default function App() {
         <main className="flex-1 bg-slate-900 flex justify-center overflow-y-auto p-4 md:p-8 print:p-0 print:bg-white print:overflow-visible">
           <div
             id="ats-resume-printable-doc"
-            className={`w-full max-w-[800px] min-h-[1050px] bg-white text-slate-900 shadow-2xl transition-all print:shadow-none print:p-0 print:m-0 print:w-full print:min-h-0 ${getFontFamily()} ${getMarginClass()} ${getFontSizeClass()} ${getLineSpacingClass()}`}
+            className={`w-full max-w-[800px] min-h-[1050px] bg-white text-slate-900 shadow-2xl p-8 md:p-12 transition-all print:shadow-none print:p-0 print:m-0 print:w-full print:min-h-0 ${getFontFamily()}`}
             style={{
+              fontSize: fontSize === 'xs' ? '12px' : fontSize === 'base' ? '15px' : fontSize === 'lg' ? '16px' : '13px',
               color: activeTheme.colors.text
             }}
           >
@@ -1874,7 +1696,7 @@ export default function App() {
                 {resumeData.personal.title || "Professional Role / Field"}
               </p>
 
-              <div className={`flex flex-wrap gap-x-4 gap-y-1.5 mt-3 justify-start ${activeTheme.headerAlignment === 'center' ? 'justify-center' : 'justify-start'}`}>
+              <div className={`flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs justify-start ${activeTheme.headerAlignment === 'center' ? 'justify-center' : 'justify-start'}`}>
                 {resumeData.personal.phone && <span>{resumeData.personal.phone}</span>}
                 {resumeData.personal.email && <span>• &nbsp;<a href={`mailto:${resumeData.personal.email}`} className="underline">{resumeData.personal.email}</a></span>}
                 {resumeData.personal.location && <span>• &nbsp;{resumeData.personal.location}</span>}
@@ -1893,7 +1715,7 @@ export default function App() {
                     <h2 className="text-sm font-bold uppercase tracking-wider border-b pb-1 flex items-center" style={{ color: activeTheme.colors.primary, borderColor: activeTheme.colors.secondary + '33' }}>
                       Professional Summary
                     </h2>
-                    <p className="text-justify">
+                    <p className="leading-relaxed text-xs text-justify">
                       {resumeData.summary}
                     </p>
                   </section>
@@ -1909,17 +1731,17 @@ export default function App() {
                         <div key={exp.id} className="space-y-1">
                           <div className="flex justify-between items-start flex-wrap gap-1">
                             <div>
-                              <span className="font-bold block md:inline-block pr-1">{exp.position}</span>
-                              <span className="italic" style={{ color: activeTheme.colors.secondary }}>| {exp.company}</span>
+                              <span className="font-bold text-sm block md:inline-block pr-1">{exp.position}</span>
+                              <span className="text-xs italic" style={{ color: activeTheme.colors.secondary }}>| {exp.company}</span>
                             </div>
-                            <div className="font-medium whitespace-nowrap">
+                            <div className="text-xs font-medium whitespace-nowrap">
                               {exp.startDate} – {exp.current ? "Present" : exp.endDate} {exp.location && `(${exp.location})`}
                             </div>
                           </div>
                           {exp.description && (
-                            <ul className="list-disc list-inside space-y-1 mt-1">
+                            <ul className="list-disc list-inside space-y-1 mt-1 text-xs">
                               {exp.description.split('\n').filter(line => line.trim().length > 0).map((line, lidx) => (
-                                <li key={lidx} className="pl-1 text-justify">
+                                <li key={lidx} className="pl-1 text-justify leading-relaxed">
                                   {line.replace(/^-\s*/, '')}
                                 </li>
                               ))}
@@ -1940,10 +1762,10 @@ export default function App() {
                       {resumeData.projects.map((proj) => (
                         <div key={proj.id} className="space-y-1">
                           <div className="flex justify-between items-start flex-wrap">
-                            <span className="font-bold">{proj.name} {proj.role && <span className="font-normal italic">– {proj.role}</span>}</span>
-                            {proj.link && <span className="underline text-slate-600">{proj.link.replace(/^https?:\/\/(www\.)?/, '')}</span>}
+                            <span className="font-bold text-xs">{proj.name} {proj.role && <span className="font-normal italic">– {proj.role}</span>}</span>
+                            {proj.link && <span className="text-xs underline text-slate-600">{proj.link.replace(/^https?:\/\/(www\.)?/, '')}</span>}
                           </div>
-                          <p className="text-justify">
+                          <p className="text-xs text-justify leading-relaxed">
                             {proj.description}
                           </p>
                         </div>
@@ -1962,7 +1784,7 @@ export default function App() {
                     </h2>
                     <div className="space-y-2">
                       {resumeData.skills.map((skill, sIdx) => (
-                        <div key={sIdx}>
+                        <div key={sIdx} className="text-xs">
                           <span className="font-bold block text-slate-850">{skill.category}:</span>
                           <span className="text-slate-600">{skill.items}</span>
                         </div>
@@ -1978,7 +1800,7 @@ export default function App() {
                     </h2>
                     <div className="space-y-3">
                       {resumeData.education.map((edu) => (
-                        <div key={edu.id} className="space-y-0.5">
+                        <div key={edu.id} className="text-xs space-y-0.5">
                           <div className="font-bold">{edu.degree}</div>
                           <div className="text-slate-600 font-medium">{edu.institution}</div>
                           <div className="flex justify-between text-slate-500 italic">
@@ -1996,7 +1818,7 @@ export default function App() {
                     <h2 className="text-sm font-bold uppercase tracking-wider border-b pb-1" style={{ color: activeTheme.colors.primary, borderColor: activeTheme.colors.secondary + '33' }}>
                       Certifications
                     </h2>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 text-xs">
                       {resumeData.certifications.map((cert, cIdx) => (
                         <div key={cert.id || cIdx} className="flex justify-between">
                           <div>
